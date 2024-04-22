@@ -18,24 +18,24 @@ export const createAdmin = async (req: Request, res: Response) => {
     const id_usuario = 'adm1-' + uuidv4();
 
     try {
-        const usuario = await UsuarioModel.create({ id_usuario, nombre, correo_electronico, contrasena: hashedPassword, puesto: 'administrador', verificationCode: codigoVerificacionCorreo, emailVerificated: false });
+        const usuario = await UsuarioModel.create({ id_usuario, nombre, correo_electronico, contrasena: hashedPassword, puesto: 'administrador', verificationCode: codigoVerificacionCorreo, emailVerificated: true });
 
-        const transporter = nodemailer.createTransport({
-            service: 'hotmail',
-            auth: {
-                user: process.env.EMAIL_USERNAME,
-                pass: process.env.EMAIL_PASSWORD
-            }
-        });
+        // const transporter = nodemailer.createTransport({
+        //     service: 'hotmail',
+        //     auth: {
+        //         user: process.env.EMAIL_USERNAME,
+        //         pass: process.env.EMAIL_PASSWORD
+        //     }
+        // });
 
-        const mailOptions = {
-            to: correo_electronico,
-            from: process.env.EMAIL_USERNAME,
-            subject: 'Verificación de correo electrónico',
-            text: `Por favor, verifica tu correo electrónico ingresando el siguiente código en la aplicación:\n\nCódigo de verificación: ${codigoVerificacionCorreo}`
-        };
+        // const mailOptions = {
+        //     to: correo_electronico,
+        //     from: process.env.EMAIL_USERNAME,
+        //     subject: 'Verificación de correo electrónico',
+        //     text: `Por favor, verifica tu correo electrónico ingresando el siguiente código en la aplicación:\n\nCódigo de verificación: ${codigoVerificacionCorreo}`
+        // };
 
-        await transporter.sendMail(mailOptions);
+        // await transporter.sendMail(mailOptions);
 
         const token = jwt.sign({ id_usuario: usuario.id_usuario }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
 
