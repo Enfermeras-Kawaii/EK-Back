@@ -1,10 +1,17 @@
 import { Request, Response } from 'express';
-import nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
+import formData from 'form-data';
+import Mailgun from 'mailgun.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
 import UsuarioModel from '../models/usuario.model';
+
+const mailgun = new Mailgun(formData);
+const mg = mailgun.client({
+    username: 'api',
+    key: process.env.MAILGUN_API_KEY || "4d0e39fad7892902f612ce174459a03b-2175ccc2-213a8c5e",
+});
 
 export const createAdmin = async (req: Request, res: Response) => {
     const { nombre, correo_electronico, contrasena } = req.body;
@@ -20,22 +27,14 @@ export const createAdmin = async (req: Request, res: Response) => {
     try {
         const usuario = await UsuarioModel.create({ id_usuario, nombre, correo_electronico, contrasena: hashedPassword, puesto: 'administrador', verificationCode: codigoVerificacionCorreo, emailVerificated: false });
 
-        const transporter = nodemailer.createTransport({
-            service: 'hotmail',
-            auth: {
-                user: process.env.EMAIL_USERNAME,
-                pass: process.env.EMAIL_PASSWORD
-            }
-        });
-
-        const mailOptions = {
-            to: correo_electronico,
+        const data = {
             from: process.env.EMAIL_USERNAME,
-            subject: 'Verificación de correo electrónico',
-            text: `Por favor, verifica tu correo electrónico ingresando el siguiente código en la aplicación:\n\nCódigo de verificación: ${codigoVerificacionCorreo}`
+            to: correo_electronico,
+            subject: 'Confirmación de correo electrónico',
+            text: `Tu código de confirmación es: ${codigoVerificacionCorreo}. Por favor, ingresa este código en la aplicación para confirmar tu correo electrónico.`,
         };
 
-        await transporter.sendMail(mailOptions);
+        await mg.messages.create(process.env.MAILGUN_DOMAIN || "shuuchakai.art", data);
 
         const token = jwt.sign({ id_usuario: usuario.id_usuario }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
 
@@ -94,22 +93,14 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
         await usuario.save();
 
-        const transporter = nodemailer.createTransport({
-            service: 'hotmail',
-            auth: {
-                user: process.env.EMAIL_USERNAME,
-                pass: process.env.EMAIL_PASSWORD
-            }
-        });
-
-        const mailOptions = {
-            to: correo_electronico,
+        const data = {
             from: process.env.EMAIL_USERNAME,
+            to: correo_electronico,
             subject: 'Restablecimiento de contraseña',
-            text: `Has solicitado el restablecimiento de tu contraseña. Por favor, ingresa el siguiente código en la aplicación para completar el proceso:\n\nCódigo de restablecimiento: ${resetPasswordCode}\n\nSi no solicitaste esto, por favor ignora este correo electrónico y tu contraseña permanecerá sin cambios.`
+            text: `Tu código de restablecimiento de contraseña es: ${resetPasswordCode}. Por favor, ingresa este código en la aplicación para restablecer tu contraseña.`,
         };
 
-        await transporter.sendMail(mailOptions);
+        await mg.messages.create(process.env.MAILGUN_DOMAIN || "shuuchakai.art", data);
 
         res.status(200).json({ message: 'Se ha enviado un correo electrónico con más instrucciones' });
     } catch (error) {
