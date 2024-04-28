@@ -16,7 +16,7 @@ import './models/association'
 
 import adminRoutes from './routes/admin.router';
 import applicationRoutes from './routes/solicitud.router';
-
+import userRoutes from './routes/solicitante.router';
 const app = express();
 
 const PORT = process.env.PORT || 3000;
@@ -46,6 +46,7 @@ app.use(cookieParser());
 
 app.use('/api', adminRoutes);
 app.use('/api', applicationRoutes);
+app.use('/api', userRoutes)
 
 syncTables();
 
